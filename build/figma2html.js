@@ -9,7 +9,8 @@ const GROUP_TYPES = ['GROUP', 'BOOLEAN_OPERATION'];
 Figma = {
 
 }
-Figma.Component = function(){
+Figma.CSS = function (){
+    
     this.colorString = function (color) {
         return `rgba(${Math.round(color.r*255)}, ${Math.round(color.g*255)}, ${Math.round(color.b*255)}, ${color.a})`;
     },
@@ -22,21 +23,10 @@ Figma.Component = function(){
         return `inset ${effect.offset.x}px ${effect.offset.y}px ${effect.radius}px ${colorString(effect.color)}`;
     },
 
-    this.imageURL = function (hash) {
-        const squash = hash.split('-').join('');
-        return `url(https://s3-us-west-2.amazonaws.com/figma-alpha/img/${squash.substring(0, 4)}/${squash.substring(4, 8)}/${squash.substring(8)})`;
-    },
-
     this.backgroundSize = function (scaleMode) {
         if (scaleMode === 'FILL') {
             return 'cover';
         }
-    },
-
-    this.nodeSort = function (a, b) {
-        if (a.absoluteBoundingBox.y < b.absoluteBoundingBox.y) return -1;
-        else if (a.absoluteBoundingBox.y === b.absoluteBoundingBox.y) return 0;
-        else return 1;
     },
 
     this.getPaint = function (paintList) {
@@ -68,6 +58,21 @@ Figma.Component = function(){
         }).join(', ');
 
         return `radial-gradient(${stops})`;
+    }
+}
+Figma.Component = function(){
+
+    this.css = new Figma.CSS();
+    
+    this.imageURL = function (hash) {
+        const squash = hash.split('-').join('');
+        return `url(https://s3-us-west-2.amazonaws.com/figma-alpha/img/${squash.substring(0, 4)}/${squash.substring(4, 8)}/${squash.substring(8)})`;
+    },
+
+    this.nodeSort = function (a, b) {
+        if (a.absoluteBoundingBox.y < b.absoluteBoundingBox.y) return -1;
+        else if (a.absoluteBoundingBox.y === b.absoluteBoundingBox.y) return 0;
+        else return 1;
     },
 
     this.expandChildren = function (node, parent, minChildren, maxChildren, centerChildren, offset) {
@@ -247,21 +252,21 @@ Figma.Component = function(){
       
           if (['FRAME', 'RECTANGLE', 'INSTANCE', 'COMPONENT'].indexOf(node.type) >= 0) {
             if (['FRAME', 'COMPONENT', 'INSTANCE'].indexOf(node.type) >= 0) {
-              styles.backgroundColor = this.colorString(node.backgroundColor);
+              styles.backgroundColor = this.css.colorString(node.backgroundColor);
               if (node.clipsContent) styles.overflow = 'hidden';
             } else if (node.type === 'RECTANGLE') {
-              const lastFill = this.getPaint(node.fills);
+              const lastFill = this.css.getPaint(node.fills);
               if (lastFill) {
                 if (lastFill.type === 'SOLID') {
-                  styles.backgroundColor = this.colorString(lastFill.color);
+                  styles.backgroundColor = this.css.colorString(lastFill.color);
                   styles.opacity = lastFill.opacity;
                 } else if (lastFill.type === 'IMAGE') {
                   styles.backgroundImage = this.imageURL(lastFill.imageRef);
-                  styles.backgroundSize = this.backgroundSize(lastFill.scaleMode);
+                  styles.backgroundSize = this.css.backgroundSize(lastFill.scaleMode);
                 } else if (lastFill.type === 'GRADIENT_LINEAR') {
-                  styles.background = this.paintToLinearGradient(lastFill);
+                  styles.background = this.css.paintToLinearGradient(lastFill);
                 } else if (lastFill.type === 'GRADIENT_RADIAL') {
-                  styles.background = this.paintToRadialGradient(lastFill);
+                  styles.background = this.css.paintToRadialGradient(lastFill);
                 }
               }
       
@@ -269,16 +274,16 @@ Figma.Component = function(){
                 for (let i=0; i<node.effects.length; i++) {
                   const effect = node.effects[i];
                   if (effect.type === 'DROP_SHADOW') {
-                    styles.boxShadow = this.dropShadow(effect);
+                    styles.boxShadow = this.css.dropShadow(effect);
                   } else if (effect.type === 'INNER_SHADOW') {
-                    styles.boxShadow = this.innerShadow(effect);
+                    styles.boxShadow = this.css.innerShadow(effect);
                   } else if (effect.type === 'LAYER_BLUR') {
                     styles.filter = `blur(${effect.radius}px)`;
                   }
                 }
               }
       
-              const lastStroke = this.getPaint(node.strokes);
+              const lastStroke = this.css.getPaint(node.strokes);
               if (lastStroke) {
                 if (lastStroke.type === 'SOLID') {
                   const weight = node.strokeWeight || 1;
@@ -640,7 +645,7 @@ Figma.Parser = function(){
             this.react.createComponent(child, images, componentMap);
             nextSection += `export class Master${child.name.replace(/\W+/g, "")} extends PureComponent {\n`;
             nextSection += "  render() {\n";
-            nextSection += `    return <div className="master" style={{backgroundColor: "${this.react.colorString(child.backgroundColor)}"}}>\n`;
+            nextSection += `    return <div className="master" style={{backgroundColor: "${this.react.css.colorString(child.backgroundColor)}"}}>\n`;
             nextSection += `      <C${child.name.replace(/\W+/g, "")} {...this.props} nodeId="${child.id}" />\n`;
             nextSection += "    </div>\n";
             nextSection += "  }\n";
