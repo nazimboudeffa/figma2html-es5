@@ -6,6 +6,7 @@ gulp.task('scripts', function() {
     'lib/Intro.js',
     'lib/Figma.js',
     'lib/style/CSS.js',
+    'lib/image/Image.js',
     'lib/core/Component.js',
     'lib/core/Parser.js',
     'lib/Outro.js'

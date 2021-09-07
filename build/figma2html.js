@@ -60,14 +60,19 @@ Figma.CSS = function (){
         return `radial-gradient(${stops})`;
     }
 }
-Figma.Component = function(){
-
-    this.css = new Figma.CSS();
+Figma.Image = function () {
     
     this.imageURL = function (hash) {
         const squash = hash.split('-').join('');
         return `url(https://s3-us-west-2.amazonaws.com/figma-alpha/img/${squash.substring(0, 4)}/${squash.substring(4, 8)}/${squash.substring(8)})`;
-    },
+    }
+
+}
+Figma.Component = function(){
+
+    this.css = new Figma.CSS();
+    
+    this.image = new Figma.Image();
 
     this.nodeSort = function (a, b) {
         if (a.absoluteBoundingBox.y < b.absoluteBoundingBox.y) return -1;
