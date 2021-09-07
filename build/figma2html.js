@@ -9,7 +9,7 @@ const GROUP_TYPES = ['GROUP', 'BOOLEAN_OPERATION'];
 Figma = {
 
 }
-Figma.Page = function(){
+Figma.Component = function(){
     this.colorString = function (color) {
         return `rgba(${Math.round(color.r*255)}, ${Math.round(color.g*255)}, ${Math.round(color.b*255)}, ${color.a})`;
     },
@@ -441,7 +441,7 @@ Figma.Parser = function(){
     this.fileKey;
     this.baseUrl = 'https://api.figma.com';
 
-    this.page = new Figma.Page();
+    this.react = new Figma.Component();
 
     this.vectorMap = {};
     this.vectorList = [];
@@ -637,10 +637,10 @@ Figma.Parser = function(){
             const child = canvas.children[i]
             if (child.name.charAt(0) === '#' && child.visible !== false) {
             const child = canvas.children[i];
-            this.page.createComponent(child, images, componentMap);
+            this.react.createComponent(child, images, componentMap);
             nextSection += `export class Master${child.name.replace(/\W+/g, "")} extends PureComponent {\n`;
             nextSection += "  render() {\n";
-            nextSection += `    return <div className="master" style={{backgroundColor: "${this.page.colorString(child.backgroundColor)}"}}>\n`;
+            nextSection += `    return <div className="master" style={{backgroundColor: "${this.react.colorString(child.backgroundColor)}"}}>\n`;
             nextSection += `      <C${child.name.replace(/\W+/g, "")} {...this.props} nodeId="${child.id}" />\n`;
             nextSection += "    </div>\n";
             nextSection += "  }\n";

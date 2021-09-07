@@ -5,7 +5,7 @@ gulp.task('scripts', function() {
   return gulp.src([
     'lib/Intro.js',
     'lib/Figma.js',
-    'lib/core/Page.js',
+    'lib/core/Component.js',
     'lib/core/Parser.js',
     'lib/Outro.js'
     ])
