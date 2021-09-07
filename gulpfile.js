@@ -5,8 +5,8 @@ gulp.task('scripts', function() {
   return gulp.src([
     'lib/Intro.js',
     'lib/Figma.js',
-    'lib/Page.js',
-    'lib/Parser.js',
+    'lib/core/Page.js',
+    'lib/core/Parser.js',
     'lib/Outro.js'
     ])
     .pipe(concat('figma2html.js'))
