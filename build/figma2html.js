@@ -783,6 +783,18 @@ Figma.Builder = function () {
             node
         }
     }
+    this.buildSpaces = function(baseSpaces, level) {
+        let spacesStr = ''
+    
+        for (let i = 0; i < baseSpaces; i++) {
+        spacesStr += ' '
+        }
+    
+        for (let i = 0; i < level; i++) {
+        spacesStr += '  '
+        }
+        return spacesStr
+    }
     this.guessTagName = function(name) {
         const _name = name.toLowerCase()
         if (_name.includes('button')) {
@@ -808,12 +820,60 @@ Figma.Builder = function () {
         }
         return tag.isText ? 'Text' : tag.name.replace(/\s/g, '')
     }
-    this.buildJSX = function (tag) {
-        return '<div></div>'
+    this.kebabize = function (str) {
+        return str
+            .split('')
+            .map((letter, idx) => {
+            return letter.toUpperCase() === letter ? `${idx !== 0 ? '-' : ''}${letter.toLowerCase()}` : letter
+            })
+            .join('')
+            .replace(/\s/g, '')
+    }
+    this.capitalizeFirstLetter = function (str) {
+        return str.charAt(0).toUpperCase() + str.slice(1)
+    }
+    this.getClassName = function (tag, cssStyle) {
+        if (cssStyle === 'css' && !tag.isComponent) {
+            if (tag.isImg) {
+            return ''
+            }
+            if (tag.isText) {
+            return ' className="text"'
+            }
+            return ` className="${this.kebabize(tag.name)}"`
+        }
+        return ''
+    }
+    this.buildChildTagsString = function (tag, cssStyle, level) {
+        if (tag.children.length > 0) {
+            return '\n' + tag.children.map((child) => buildJsxString(child, cssStyle, level + 1)).join('\n')
+        }
+        if (tag.isText) {
+            return `${tag.textCharacters}`
+        }
+        return ''
+    }
+    this.buildJSXString = function (tag, cssStyle, level) {
+        if (!tag) {
+            return ''
+          }
+        
+        var spaceString = this.buildSpaces(4, level)
+        var hasChildren = tag.children.length > 0
+        
+        var tagName = this.getTagName(tag);
+        var className = this.getClassName(tag, cssStyle)
+
+        const openingTag = `<${tagName}${className}${hasChildren || tag.isText ? `` : ' /'}>`
+        const childTags = this.buildChildTagsString(tag, cssStyle, level)
+        const closingTag = hasChildren || tag.isText ? `${!tag.isText ? '\n' + spaceString : ''}</${tagName}>` : ''
+      
+        return openingTag + childTags + closingTag
+        //return '<div></div>'
     }
     this.buildCode =  function (tag, cssStyle){
-        var code = 'const ' + tag.name.replace(/\s/g, '').charAt(0).toUpperCase() + tag.name.replace(/\s/g, '').slice(1) + '() => {\n';
-        code += 'return (' + this.buildJSX(tag) +')\n';
+        var code = 'const ' + this.capitalizeFirstLetter(tag.name.replace(/\s/g, '')) + '() => {\n';
+        code += 'return (' + this.buildJSXString(tag, 'css', 0) +')\n';
         code += '}';
         return code;
     }
