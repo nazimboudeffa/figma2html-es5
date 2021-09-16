@@ -112,9 +112,31 @@ Figma.Tag = function () {
 }
 Figma.Component = function(){
 
+  this.vectorMap = {};
+  this.vectorList = [];
+  this.vectorTypes = ['VECTOR', 'LINE', 'REGULAR_POLYGON', 'ELLIPSE', 'STAR'];
+
     this.css = new Figma.CSS();
     
     this.image = new Figma.Image();
+
+    this.client = axios.create({
+      baseURL: `https://api.figma.com/v1/`,
+      headers: {
+          "X-Figma-Token": process.env.TOKEN,
+      },
+  })
+
+  this.getDocument = async function (){
+      return this.client
+          .get('files/'+ this.fileKey)
+          .then((data) => {
+              return data.data.document;
+          })
+          .catch((error) => {
+              return error.data.status;
+          })
+  }
 
     this.nodeSort = function (a, b) {
         if (a.absoluteBoundingBox.y < b.absoluteBoundingBox.y) return -1;
@@ -488,72 +510,6 @@ Figma.Component = function(){
         print('}', '');
         componentMap[component.id] = {instance, name, doc};
       }
-}
-Figma.Parser = function(){
-    this.fileKey;
-    this.baseUrl = 'https://api.figma.com';
-
-    this.react = new Figma.Component();
-
-    this.vectorMap = {};
-    this.vectorList = [];
-    this.vectorTypes = ['VECTOR', 'LINE', 'REGULAR_POLYGON', 'ELLIPSE', 'STAR'];
-    this.output = [];
-
-    this.client = axios.create({
-        baseURL: `https://api.figma.com/v1/`,
-        headers: {
-            "X-Figma-Token": process.env.TOKEN,
-        },
-    })
-
-    this.getDocument = async function (){
-        return this.client
-            .get('files/'+ this.fileKey)
-            .then((data) => {
-                return data.data.document;
-            })
-            .catch((error) => {
-                return error.data.status;
-            })
-    }
-
-    this.parse = async function (fileId){
-        this.fileKey = fileId;
-        var document = await this.getDocument();
-        //console.log(document);
-		await this.parseTree(document.children, "");
-		return this.output;
-    }
-
-    this.parseTree = function(pages, name){
-        console.log(pages);
-        for (var i = 0; i < pages.length; i++) {
-			var page = pages[i];
-
-
-			if (page["children"]) {
-				this.parseTree(page["children"], page.name);
-			}
-
-			var layer = page["children"] ? page["children"][0] : page;
-
-            this.output.push({
-                name : page.name,
-                parent : name
-            });
-        }
-        /*
-        this.output = {
-            name : pages[0].name,
-            backgroundColor : pages[0].backgroundColor[0],
-            degree: pages[0].children.length,
-            children1 : pages[0].children[0]
-        }   
-        */
-        return this.output;
-    }
-    
     this.toHTML = async function () {
         this.fileKey = fileId;
         var doc = await this.getDocument();
@@ -689,10 +645,10 @@ Figma.Parser = function(){
             const child = canvas.children[i]
             if (child.name.charAt(0) === '#' && child.visible !== false) {
             const child = canvas.children[i];
-            this.react.createComponent(child, images, componentMap);
+            this.createComponent(child, images, componentMap);
             nextSection += `export class Master${child.name.replace(/\W+/g, "")} extends PureComponent {\n`;
             nextSection += "  render() {\n";
-            nextSection += `    return <div className="master" style={{backgroundColor: "${this.react.css.colorString(child.backgroundColor)}"}}>\n`;
+            nextSection += `    return <div className="master" style={{backgroundColor: "${this.css.colorString(child.backgroundColor)}"}}>\n`;
             nextSection += `      <C${child.name.replace(/\W+/g, "")} {...this.props} nodeId="${child.id}" />\n`;
             nextSection += "    </div>\n";
             nextSection += "  }\n";
@@ -731,6 +687,68 @@ Figma.Parser = function(){
         });
         */
         return contents;
+    }
+}
+Figma.Parser = function(){
+    this.fileKey;
+    this.baseUrl = 'https://api.figma.com';
+
+    this.react = new Figma.Component();
+    
+    this.output = [];
+
+    this.client = axios.create({
+        baseURL: `https://api.figma.com/v1/`,
+        headers: {
+            "X-Figma-Token": process.env.TOKEN,
+        },
+    })
+
+    this.getDocument = async function (){
+        return this.client
+            .get('files/'+ this.fileKey)
+            .then((data) => {
+                return data.data.document;
+            })
+            .catch((error) => {
+                return error.data.status;
+            })
+    }
+
+    this.parse = async function (fileId){
+        this.fileKey = fileId;
+        var document = await this.getDocument();
+        //console.log(document);
+		await this.parseTree(document.children, "");
+		return this.output;
+    }
+
+    this.parseTree = function(pages, name){
+        console.log(pages);
+        for (var i = 0; i < pages.length; i++) {
+			var page = pages[i];
+
+
+			if (page["children"]) {
+				this.parseTree(page["children"], page.name);
+			}
+
+			var layer = page["children"] ? page["children"][0] : page;
+
+            this.output.push({
+                name : page.name,
+                parent : name
+            });
+        }
+        /*
+        this.output = {
+            name : pages[0].name,
+            backgroundColor : pages[0].backgroundColor[0],
+            degree: pages[0].children.length,
+            children1 : pages[0].children[0]
+        }   
+        */
+        return this.output;
     }
 }
 Figma.Builder = function () {
