@@ -871,17 +871,22 @@ Figma.Builder = function () {
         return openingTag + childTags + closingTag
         //return '<div></div>'
     }
-    this.buildCode =  function (tag, cssStyle){
-        var code = 'const ' + this.capitalizeFirstLetter(tag.name.replace(/\s/g, '')) + '() => {\n';
-        code += 'return (' + this.buildJSXString(tag, 'css', 0) +')\n';
-        code += '}';
+    this.buildCode =  function (tag, codeType, cssStyle){
+        var code = ''; 
+        if (codeType == 'react') {
+            code += 'const ' + this.capitalizeFirstLetter(tag.name.replace(/\s/g, '')) + '() => {\n';
+            code += 'return (' + this.buildJSXString(tag, cssStyle, 0) +')\n';
+            code += '}';
+        } else {
+            code += '<' + tag.name + '></' + tag.name + '>';
+        }
         return code;
     }
     this.generate = async function (fileId, config) {
         this.fileKey = fileId;
         var doc = await this.getDocument();
         var tag = this.buildTagTree(doc.children[0].children[0].children[0]);
-        var generatedCode = this.buildCode(tag, null);
+        var generatedCode = this.buildCode(tag, config.codeType, config.cssStyle);
         return generatedCode;
         //return tag;
     }
